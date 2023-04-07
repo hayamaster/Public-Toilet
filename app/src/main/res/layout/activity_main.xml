@@ -33,6 +33,10 @@
 <!--            tools:ignore="MissingConstraints" />-->
 <!--    </LinearLayout>-->
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView"/>
 
     <fragment
         android:id="@+id/map"
@@ -46,14 +50,15 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/x"
         android:layout_alignParentRight="true"
-        android:layout_marginBottom="15dp"
-        android:layout_marginRight="20dp"
-        android:backgroundTint="#009688"
+        android:layout_marginBottom="10dp"
+        android:layout_marginRight="23dp"
+        android:backgroundTint="@color/button"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/ok"
         android:visibility="invisible"
         app:borderWidth="0dp"
-        app:fabSize="normal"/>
+        app:maxImageSize="52dp"
+        app:fabCustomSize="67dp"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/x"
@@ -61,14 +66,15 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/main_btn"
         android:layout_alignParentRight="true"
-        android:layout_marginBottom="15dp"
-        android:layout_marginRight="20dp"
-        android:backgroundTint="#009688"
+        android:layout_marginBottom="10dp"
+        android:layout_marginRight="23dp"
+        android:backgroundTint="@color/button"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/x"
         android:visibility="invisible"
         app:borderWidth="0dp"
-        app:fabSize="normal"/>
+        app:maxImageSize="52dp"
+        app:fabCustomSize="67dp"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/main_btn"
@@ -79,12 +85,12 @@
         android:layout_alignParentRight="true"
         android:layout_marginBottom="20dp"
         android:layout_marginRight="20dp"
-        android:backgroundTint="#009688"
+        android:backgroundTint="@color/button"
         android:onClick="ClickBtn"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/plus"
         app:borderWidth="0dp"
-        app:fabSize="normal"
-        tools:ignore="OnClick" />
+        app:maxImageSize="50dp"
+        app:fabCustomSize="70dp"/>
 
 </RelativeLayout>
