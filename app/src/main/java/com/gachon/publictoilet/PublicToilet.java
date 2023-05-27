@@ -4,9 +4,9 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class PublicToilet {
-    @SerializedName("OBJECTID")
-    @Expose
-    private String id;
+//    @SerializedName("OBJECTID")
+//    @Expose
+//    private String id;
 
     @SerializedName("LAT")
     @Expose
@@ -16,9 +16,9 @@ public class PublicToilet {
     @Expose
     private double lon;
 
-    public String getID(){
-        return id;
-    }
+//    public String getID(){
+//        return id;
+//    }
 
     public Double getLat(){
         return lat;

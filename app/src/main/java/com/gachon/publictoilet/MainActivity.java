@@ -65,9 +65,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         main_btn = (FloatingActionButton) findViewById(R.id.main_btn);
         x = (FloatingActionButton) findViewById(R.id.x);
         ok = (FloatingActionButton) findViewById(R.id.ok);
-
-
-
     }
 
     private void setMark(Marker marker,  double lat, double lng)

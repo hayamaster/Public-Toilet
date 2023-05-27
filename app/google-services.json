@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "508211613213",
+    "firebase_url": "https://public-toilet-95156-default-rtdb.firebaseio.com",
+    "project_id": "public-toilet-95156",
+    "storage_bucket": "public-toilet-95156.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508211613213:android:38bc7dbb8be2b939e100f4",
+        "android_client_info": {
+          "package_name": "com.gachon.firebase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQgA-JvEITivUyAkGmaGa-bAq8skwJIaw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508211613213:android:e69b8d7c6d1177c9e100f4",
+        "android_client_info": {
+          "package_name": "com.gachon.publictoilet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQgA-JvEITivUyAkGmaGa-bAq8skwJIaw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
