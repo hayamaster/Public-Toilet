@@ -2,9 +2,15 @@ package com.gachon.publictoilet;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.PointF;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +22,7 @@ import com.gachon.publictoilet.ApiExtract.GeoInfoExtract;
 import com.gachon.publictoilet.ApiExtract.RowExtract;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
@@ -33,8 +40,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
-
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback{
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final int ACCESS_LOCATION_PERMISSION_REQUEST_CODE = 100;
     private FusedLocationSource locationSource;
@@ -54,9 +60,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
 
         // 네이버 맵
-        MapFragment mapFragment = (MapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+        MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         locationSource = new FusedLocationSource(this, ACCESS_LOCATION_PERMISSION_REQUEST_CODE);
+
 
         // 버튼
         mContext = getApplicationContext();
@@ -67,8 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ok = (FloatingActionButton) findViewById(R.id.ok);
     }
 
-    private void setMark(Marker marker,  double lat, double lng)
-    {
+    private void setMark(Marker marker, double lat, double lng) {
         //원근감 표시
         marker.setIconPerspectiveEnabled(true);
         //아이콘 지정
@@ -86,11 +92,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
 
+        // 네이버 지도에 위치 추적 소스를 설정
         naverMap.setLocationSource(locationSource);
+
+        // 네이버 지도의 UI 설정
         UiSettings uiSettings = naverMap.getUiSettings();
         uiSettings.setLocationButtonEnabled(true);
 
-        LatLng mapCenter = naverMap.getCameraPosition().target;
+        // 네이버 지도 렌더링 시, 나의 위치 표시하기
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            LocationManager locationManager = (LocationManager)
+                    getSystemService(Context.LOCATION_SERVICE);
+            Location loc_Current = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            double cur_lat = loc_Current.getLatitude();
+            double cur_lon = loc_Current.getLongitude();
+            naverMap.setCameraPosition(new CameraPosition(new LatLng(cur_lat, cur_lon), 15, 0, 0));
+        }
 
 
         // 공공화장실
@@ -167,3 +184,5 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 }
+
+
