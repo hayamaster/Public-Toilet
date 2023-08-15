@@ -1,20 +1,23 @@
 package com.gachon.publictoilet;
 
+import static android.content.ContentValues.TAG;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
-import android.graphics.PointF;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Toast;
+import android.widget.Button;
+import android.widget.EditText;
 
 import com.gachon.publictoilet.ApiExtract.GeoInfoExtract;
-import com.gachon.publictoilet.ApiExtract.RowExtract;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapFragment;
@@ -25,13 +28,11 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
-import java.nio.file.attribute.GroupPrincipal;
 import java.util.ArrayList;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback{
@@ -47,11 +48,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Call<GeoInfoExtract> call;
     private ArrayList<PublicToilet> data;
 
+    private DatabaseReference mDatabaseRef;
+    private EditText mAddress;
+    private Button mSearch;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        
 
         // 네이버 맵
         MapFragment mapFragment = (MapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
