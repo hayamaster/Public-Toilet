@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.PointF;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -52,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Call<GeoInfoExtract> call;
     private ArrayList<PublicToilet> data;
-
+    private LocationManager mLocationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +65,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
         locationSource = new FusedLocationSource(this, ACCESS_LOCATION_PERMISSION_REQUEST_CODE);
 
-
         // 버튼
         mContext = getApplicationContext();
         fab_open = AnimationUtils.loadAnimation(mContext, R.anim.fab_open);
@@ -74,20 +74,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ok = (FloatingActionButton) findViewById(R.id.ok);
     }
 
-    private void setMark(Marker marker, double lat, double lng) {
-        //원근감 표시
-        marker.setIconPerspectiveEnabled(true);
-        //아이콘 지정
-        marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
-        //마커의 투명도
-        marker.setAlpha(0.8f);
-        //마커 위치
-        marker.setPosition(new LatLng(lat, lng));
-        //마커 우선순위
-        marker.setZIndex(0);
-        //마커 표시
-        marker.setMap(naverMap);
-    }
+//    private void setMark(Marker marker, double lat, double lng) {
+//        //원근감 표시
+//        marker.setIconPerspectiveEnabled(true);
+//        //아이콘 지정
+//        marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
+//        //마커의 투명도
+//        marker.setAlpha(0.8f);
+//        //마커 위치
+//        marker.setPosition(new LatLng(lat, lng));
+//        //마커 우선순위
+//        marker.setZIndex(0);
+//        //마커 표시
+//        marker.setMap(naverMap);
+//    }
+
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
@@ -99,15 +100,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         UiSettings uiSettings = naverMap.getUiSettings();
         uiSettings.setLocationButtonEnabled(true);
 
-        // 네이버 지도 렌더링 시, 나의 위치 표시하기
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            LocationManager locationManager = (LocationManager)
-                    getSystemService(Context.LOCATION_SERVICE);
-            Location loc_Current = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            double cur_lat = loc_Current.getLatitude();
-            double cur_lon = loc_Current.getLongitude();
-            naverMap.setCameraPosition(new CameraPosition(new LatLng(cur_lat, cur_lon), 15, 0, 0));
+        // 네이버 지도 렌더링 시, 나의 위치 표시하기 (버전 1)
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+//            LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+//
+//            String locationProvider = LocationManager.NETWORK_PROVIDER;
+////            Location location = locationManager.getLastKnownLocation(locationProvider);
+//            double cur_lat = location.getLatitude();
+//            double cur_lon = location.getLongitude();
+//            Toast.makeText(getApplicationContext(), "zzzz "+ cur_lat, Toast.LENGTH_LONG).show();
+//            naverMap.setCameraPosition(new CameraPosition(new LatLng(cur_lat, cur_lon), 15, 0, 0));
+//        }
+
+        // 네이버 지도 렌더링 시, 나의 위치 표시하기 (버전 2)
+        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+        }else {
+            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null ? mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) : mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            if(location == null){
+                Toast.makeText(this, "위치가 없습니다.", Toast.LENGTH_LONG).show();
+            }else{
+                Toast.makeText(this, "위도: " +location.getLatitude() + "경도: " + location.getLongitude(), Toast.LENGTH_LONG).show();
+                naverMap.setCameraPosition(new CameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 15, 0, 0));
+            }
         }
+
 
 
         // 공공화장실
@@ -183,6 +202,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             isFabOpen = true;
         }
     }
+
+    // 위치 정보 업데이트 코드
+    final LocationListener gpsLocationListener = new LocationListener() {
+        public void onLocationChanged(Location location) {
+            // 위치 리스너는 위치정보를 전달할 때 호출되므로 onLocationChanged()메소드 안에 위지청보를 처리를 작업을 구현 해야합니다.
+            double longitude = location.getLongitude(); // 위도
+            double latitude = location.getLatitude(); // 경도
+            Toast.makeText(getApplicationContext(), "else "+ latitude + longitude, Toast.LENGTH_LONG).show();
+        }
+        public void onStatusChanged(String provider, int status, Bundle extras) {}
+        public void onProviderEnabled(String provider) {}
+        public void onProviderDisabled(String provider) {}
+    };
 }
 
 
