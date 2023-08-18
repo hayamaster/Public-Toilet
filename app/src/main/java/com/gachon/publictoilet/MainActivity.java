@@ -41,6 +41,7 @@ import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -58,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean isFabOpen = false;
 
     Call<GeoInfoExtract> call;
-    private ArrayList<PublicToilet> data;
+    private ArrayList<PublicToilet> data = new ArrayList<>();
     private LocationManager mLocationManager;
 
     private DatabaseReference mDatabaseRef;
@@ -69,8 +70,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        
 
         // 네이버 맵
         MapFragment mapFragment = (MapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
@@ -140,16 +139,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         // 공공화장실
-        call = PublicToiletResult.getApiService().test_api_get();
-        call.enqueue(new Callback<GeoInfoExtract>(){
-            @Override
-            public void onResponse(Call<GeoInfoExtract> call, Response<GeoInfoExtract> response) {
-                GeoInfoExtract result = response.body();
-                data = result.getGeoInfo().getRow();
-                Log.i("HA", result.toString());
-                if(data.get(1) != null){
-                    for(int i = 0; i < 1000; i++){
-                        Log.i("imsy", data.get(i).getLon().toString());
+        ArrayList<Call<GeoInfoExtract>> getApiServices = new ArrayList<>(
+                Arrays.asList(
+                        PublicToiletResult.getApiService1().test_api_get(),
+                        PublicToiletResult.getApiService2().test_api_get(),
+                        PublicToiletResult.getApiService3().test_api_get(),
+                        PublicToiletResult.getApiService4().test_api_get(),
+                        PublicToiletResult.getApiService5().test_api_get(),
+                        PublicToiletResult.getApiService6().test_api_get()
+                )
+        );
+        // 공공화장실 다중 API 호출하기
+        for (Call<GeoInfoExtract> call: getApiServices){
+            call.enqueue(new Callback<GeoInfoExtract>(){
+                @Override
+                public void onResponse(Call<GeoInfoExtract> call, Response<GeoInfoExtract> response) {
+                    GeoInfoExtract result = response.body();
+                    data = result.getGeoInfo().getRow();
+                    for(int i = 0; i < data.size(); i++){
+                        Log.i("imsy", data.get(i).getLat().toString());
                         Marker marker = new Marker();
                         marker.setPosition(new LatLng(data.get(i).getLat(), data.get(i).getLon()));
                         marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
@@ -158,12 +166,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         marker.setMap(naverMap);
                     }
                 }
-            }
-            @Override
-            public void onFailure(Call<GeoInfoExtract> call, Throwable t) {
-                Log.i("fail", "failed getting data...");
-            }
-        });
+                @Override
+                public void onFailure(Call<GeoInfoExtract> call, Throwable t) {
+                    Log.i("fail", "failed getting data...");
+                }
+            });
+        }
     }
 
     @Override
@@ -214,16 +222,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     // 위치 정보 업데이트 코드
-    final LocationListener gpsLocationListener = new LocationListener() {
-        public void onLocationChanged(Location location) {
-            // 위치 리스너는 위치정보를 전달할 때 호출되므로 onLocationChanged()메소드 안에 위지청보를 처리를 작업을 구현 해야합니다.
-            double longitude = location.getLongitude(); // 위도
-            double latitude = location.getLatitude(); // 경도
-            Toast.makeText(getApplicationContext(), "else "+ latitude + longitude, Toast.LENGTH_LONG).show();
-        }
-        public void onStatusChanged(String provider, int status, Bundle extras) {}
-        public void onProviderEnabled(String provider) {}
-        public void onProviderDisabled(String provider) {}
-    };
+//    final LocationListener gpsLocationListener = new LocationListener() {
+//        public void onLocationChanged(Location location) {
+//            // 위치 리스너는 위치정보를 전달할 때 호출되므로 onLocationChanged()메소드 안에 위지청보를 처리를 작업을 구현 해야합니다.
+//            double longitude = location.getLongitude(); // 위도
+//            double latitude = location.getLatitude(); // 경도
+//            Toast.makeText(getApplicationContext(), "else "+ latitude + longitude, Toast.LENGTH_LONG).show();
+//        }
+//        public void onStatusChanged(String provider, int status, Bundle extras) {}
+//        public void onProviderEnabled(String provider) {}
+//        public void onProviderDisabled(String provider) {}
+//    };
 }
 
