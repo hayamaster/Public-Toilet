@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.gachon.publictoilet">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -16,8 +15,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PublicToilet"
         android:usesCleartextTraffic="true">
-
-        <activity android:name="com.gachon.publictoilet.MainActivity"
+        <activity
+            android:name=".search"
+            android:exported="false" />
+        <activity
+            android:name=".ToiletPlace"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
             android:exported="true"
             tools:ignore="MissingClass">
             <intent-filter>
@@ -29,7 +34,7 @@
 
         <meta-data
             android:name="com.naver.maps.map.CLIENT_ID"
-            android:value="g2o699d48z"/>
+            android:value="g2o699d48z" />
     </application>
 
 </manifest>

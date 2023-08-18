@@ -1,27 +1,34 @@
 package com.gachon.publictoilet;
 
+import static android.content.ContentValues.TAG;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
-import android.Manifest;
 import android.content.Context;
+//<<<<<<< HEAD
+//import android.content.pm.PackageManager;
+//import android.graphics.PointF;
 import android.content.pm.PackageManager;
-import android.graphics.PointF;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+//=======
+//>>>>>>> 80a53f8541b0e7c44c9317b8f7bb6d1cc2f825e2
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.gachon.publictoilet.ApiExtract.GeoInfoExtract;
-import com.gachon.publictoilet.ApiExtract.RowExtract;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.LocationTrackingMode;
@@ -33,15 +40,14 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
-import java.nio.file.attribute.GroupPrincipal;
 import java.util.ArrayList;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback{
 
     private static final int ACCESS_LOCATION_PERMISSION_REQUEST_CODE = 100;
     private FusedLocationSource locationSource;
@@ -55,13 +61,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ArrayList<PublicToilet> data;
     private LocationManager mLocationManager;
 
+    private DatabaseReference mDatabaseRef;
+    private EditText mAddress;
+    private Button mSearch;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        
+
         // 네이버 맵
-        MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        MapFragment mapFragment = (MapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         locationSource = new FusedLocationSource(this, ACCESS_LOCATION_PERMISSION_REQUEST_CODE);
 
@@ -93,10 +105,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
 
-        // 네이버 지도에 위치 추적 소스를 설정
         naverMap.setLocationSource(locationSource);
-
-        // 네이버 지도의 UI 설정
         UiSettings uiSettings = naverMap.getUiSettings();
         uiSettings.setLocationButtonEnabled(true);
 
@@ -114,18 +123,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // 네이버 지도 렌더링 시, 나의 위치 표시하기 (버전 2)
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
-        }else {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+        } else {
             Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null ? mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) : mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if(location == null){
+            if (location == null) {
                 Toast.makeText(this, "위치가 없습니다.", Toast.LENGTH_LONG).show();
-            }else{
-                Toast.makeText(this, "위도: " +location.getLatitude() + "경도: " + location.getLongitude(), Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "위도: " + location.getLatitude() + "경도: " + location.getLongitude(), Toast.LENGTH_LONG).show();
                 naverMap.setCameraPosition(new CameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 15, 0, 0));
             }
         }
+
 
 
 
@@ -216,5 +226,4 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onProviderDisabled(String provider) {}
     };
 }
-
 
