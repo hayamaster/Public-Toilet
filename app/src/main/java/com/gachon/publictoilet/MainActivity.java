@@ -16,6 +16,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 //=======
 //>>>>>>> 80a53f8541b0e7c44c9317b8f7bb6d1cc2f825e2
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -40,6 +41,7 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -61,6 +63,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Call<GeoInfoExtract> call;
     private ArrayList<PublicToilet> data = new ArrayList<>();
     private LocationManager mLocationManager;
+    private double mlat;
+    private double mlon;
+    private ArrayList<Marker> marked = new ArrayList<>();
 
     private DatabaseReference mDatabaseRef;
     private EditText mAddress;
@@ -104,23 +109,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
 
+        this.naverMap = naverMap;
         naverMap.setLocationSource(locationSource);
         UiSettings uiSettings = naverMap.getUiSettings();
         uiSettings.setLocationButtonEnabled(true);
 
-        // 네이버 지도 렌더링 시, 나의 위치 표시하기 (버전 1)
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-//            LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-//
-//            String locationProvider = LocationManager.NETWORK_PROVIDER;
-////            Location location = locationManager.getLastKnownLocation(locationProvider);
-//            double cur_lat = location.getLatitude();
-//            double cur_lon = location.getLongitude();
-//            Toast.makeText(getApplicationContext(), "zzzz "+ cur_lat, Toast.LENGTH_LONG).show();
-//            naverMap.setCameraPosition(new CameraPosition(new LatLng(cur_lat, cur_lon), 15, 0, 0));
-//        }
-
-        // 네이버 지도 렌더링 시, 나의 위치 표시하기 (버전 2)
+        // 네이버 지도 렌더링 시, 나의 위치 표시하기
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -130,15 +124,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (location == null) {
                 Toast.makeText(this, "위치가 없습니다.", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(this, "위도: " + location.getLatitude() + "경도: " + location.getLongitude(), Toast.LENGTH_LONG).show();
-                naverMap.setCameraPosition(new CameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 15, 0, 0));
+                mlat = location.getLatitude();
+                mlon = location.getLongitude();
+                Toast.makeText(this, "위도: " + mlat + "경도: " + mlon, Toast.LENGTH_LONG).show();
+                naverMap.setCameraPosition(new CameraPosition(new LatLng(mlat, mlon), 15, 0, 0));
             }
         }
 
-
-
-
-        // 공공화장실
+        // 공공화장실 데이터
         ArrayList<Call<GeoInfoExtract>> getApiServices = new ArrayList<>(
                 Arrays.asList(
                         PublicToiletResult.getApiService1().test_api_get(),
@@ -149,29 +142,68 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         PublicToiletResult.getApiService6().test_api_get()
                 )
         );
-        // 공공화장실 다중 API 호출하기
-        for (Call<GeoInfoExtract> call: getApiServices){
-            call.enqueue(new Callback<GeoInfoExtract>(){
+
+        fetchApi(getApiServices, naverMap);
+
+        // 맵을 클릭할 시, 클릭한 곳의 위치를 기반으로 새롭게 화장실 마크를 구성
+        naverMap.setOnMapClickListener((point, coord) -> {
+            mlat = coord.latitude;
+            mlon = coord.longitude;
+            // 이전에 표시된 마크들을 삭제
+            for(Marker mark : marked){
+                mark.setMap(null);
+            }
+            marked.clear();
+
+            fetchApi(getApiServices, this.naverMap);
+        });
+    }
+
+    // 공공화장실 다중 API 호출하기
+    public void fetchApi(ArrayList<Call<GeoInfoExtract>> getApiServices, NaverMap naverMap) {
+        for (Call<GeoInfoExtract> call : getApiServices) {
+            call.clone().enqueue(new Callback<GeoInfoExtract>() {
                 @Override
                 public void onResponse(Call<GeoInfoExtract> call, Response<GeoInfoExtract> response) {
                     GeoInfoExtract result = response.body();
                     data = result.getGeoInfo().getRow();
-                    for(int i = 0; i < data.size(); i++){
-                        Log.i("imsy", data.get(i).getLat().toString());
-                        Marker marker = new Marker();
-                        marker.setPosition(new LatLng(data.get(i).getLat(), data.get(i).getLon()));
-                        marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
-                        marker.setWidth(120);
-                        marker.setHeight(120);
-                        marker.setMap(naverMap);
+                    for (int i = 0; i < data.size(); i++) {
+                        double dist = (DistanceByDegreeAndroid(data.get(i).getLat(), data.get(i).getLon()) / 1000);
+                        if (dist <= 2) {
+                            Log.i("imsy", data.get(i).getLat().toString());
+                            Marker marker = new Marker();
+                            marker.setPosition(new LatLng(data.get(i).getLat(), data.get(i).getLon()));
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
+                            marker.setWidth(120);
+                            marker.setHeight(120);
+                            marker.setMap(naverMap);
+                            marked.add(marker);
+                        }
                     }
-                }
+                };
+
                 @Override
                 public void onFailure(Call<GeoInfoExtract> call, Throwable t) {
                     Log.i("fail", "failed getting data...");
-                }
+                };
             });
         }
+    };
+
+
+    // 내 위치와 화장실 지점(위도, 경도) 사이의 거리
+    public double DistanceByDegreeAndroid(double _latitude2, double _longitude2){
+        Location startPos = new Location("PointA");
+        Location endPos = new Location("PointB");
+
+        startPos.setLatitude(mlat);
+        startPos.setLongitude(mlon);
+        endPos.setLatitude(_latitude2);
+        endPos.setLongitude(_longitude2);
+
+        double distance = startPos.distanceTo(endPos);
+
+        return distance;
     }
 
     @Override
@@ -220,18 +252,5 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             isFabOpen = true;
         }
     }
-
-    // 위치 정보 업데이트 코드
-//    final LocationListener gpsLocationListener = new LocationListener() {
-//        public void onLocationChanged(Location location) {
-//            // 위치 리스너는 위치정보를 전달할 때 호출되므로 onLocationChanged()메소드 안에 위지청보를 처리를 작업을 구현 해야합니다.
-//            double longitude = location.getLongitude(); // 위도
-//            double latitude = location.getLatitude(); // 경도
-//            Toast.makeText(getApplicationContext(), "else "+ latitude + longitude, Toast.LENGTH_LONG).show();
-//        }
-//        public void onStatusChanged(String provider, int status, Bundle extras) {}
-//        public void onProviderEnabled(String provider) {}
-//        public void onProviderDisabled(String provider) {}
-//    };
 }
 
