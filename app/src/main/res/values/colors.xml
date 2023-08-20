@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="pink500">#E91E63</color>
     <color name="button">#D1B2FF</color>
+    <color name="search_bar">#f0dbf8</color>
 </resources>
