@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private double mlat;
     private double mlon;
     private ArrayList<Marker> marked = new ArrayList<>();
+    private Marker clickedMark = new Marker();
 
     private DatabaseReference mDatabaseRef;
     private EditText mAddress;
@@ -154,6 +155,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mark.setMap(null);
             }
             marked.clear();
+
+            // 클릭한 위치에 빨간 핀 세우기
+            clickedMark.setMap(null);
+            clickedMark.setPosition(new LatLng(mlat, mlon));
+            clickedMark.setIcon(OverlayImage.fromResource(R.drawable.pin));
+            clickedMark.setWidth(120);
+            clickedMark.setHeight(120);
+            clickedMark.setMap(naverMap);
 
             fetchApi(getApiServices, this.naverMap);
         });
