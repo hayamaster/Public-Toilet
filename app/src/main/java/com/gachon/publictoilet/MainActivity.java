@@ -24,9 +24,12 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import androidx.appcompat.widget.SearchView;
 import android.widget.Toast;
 
+import com.gachon.publictoilet.ApiExtract.ApiExtract;
 import com.gachon.publictoilet.ApiExtract.GeoInfoExtract;
+import com.google.android.gms.common.api.Api;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -41,13 +44,13 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.http.Query;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback{
@@ -61,7 +64,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean isFabOpen = false;
 
     Call<GeoInfoExtract> call;
-    private ArrayList<PublicToilet> data = new ArrayList<>();
+//    private ArrayList<PublicToilet> data = new ArrayList<>();
+    private ArrayList<PublicToilet2> data= new ArrayList<>();
     private LocationManager mLocationManager;
     private double mlat;
     private double mlon;
@@ -71,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private DatabaseReference mDatabaseRef;
     private EditText mAddress;
     private Button mSearch;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +94,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         main_btn = (FloatingActionButton) findViewById(R.id.main_btn);
         x = (FloatingActionButton) findViewById(R.id.x);
         ok = (FloatingActionButton) findViewById(R.id.ok);
+
+        searchView = findViewById(R.id.search_view);
+//        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener{
+//
+//        });
     }
 
 //    private void setMark(Marker marker, double lat, double lng) {
@@ -133,14 +143,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         // 공공화장실 데이터
-        ArrayList<Call<GeoInfoExtract>> getApiServices = new ArrayList<>(
+        // 서울시 화장실 api
+//        ArrayList<Call<GeoInfoExtract>> getApiServices = new ArrayList<>(
+//                Arrays.asList(
+//                        PublicToiletResult.getApiService1().test_api_get()
+////                        PublicToiletResult.getApiService2().test_api_get(),
+////                        PublicToiletResult.getApiService3().test_api_get(),
+////                        PublicToiletResult.getApiService4().test_api_get(),
+////                        PublicToiletResult.getApiService5().test_api_get(),
+////                        PublicToiletResult.getApiService6().test_api_get()
+//                )
+//        );
+        ArrayList<Call<ApiExtract>> getApiServices = new ArrayList<>(
                 Arrays.asList(
-                        PublicToiletResult.getApiService1().test_api_get(),
-                        PublicToiletResult.getApiService2().test_api_get(),
-                        PublicToiletResult.getApiService3().test_api_get(),
-                        PublicToiletResult.getApiService4().test_api_get(),
-                        PublicToiletResult.getApiService5().test_api_get(),
-                        PublicToiletResult.getApiService6().test_api_get()
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 1, 1000),
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 2, 1000),
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 3, 1000),
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 4, 1000),
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 5, 1000),
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 6, 1000),
+                        PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 7, 1000)
                 )
         );
 
@@ -169,13 +191,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     // 공공화장실 다중 API 호출하기
-    public void fetchApi(ArrayList<Call<GeoInfoExtract>> getApiServices, NaverMap naverMap) {
-        for (Call<GeoInfoExtract> call : getApiServices) {
-            call.clone().enqueue(new Callback<GeoInfoExtract>() {
+    // 경기도 공중화장실
+    public void fetchApi(ArrayList<Call<ApiExtract>> getApiServices, NaverMap naverMap) {
+        for (Call<ApiExtract> call : getApiServices) {
+            call.clone().enqueue(new Callback<ApiExtract>() {
                 @Override
-                public void onResponse(Call<GeoInfoExtract> call, Response<GeoInfoExtract> response) {
-                    GeoInfoExtract result = response.body();
-                    data = result.getGeoInfo().getRow();
+                public void onResponse(Call<ApiExtract> call, Response<ApiExtract> response) {
+                    ApiExtract result = response.body();
+                    data = result.getApiInfo().getRow();
                     for (int i = 0; i < data.size(); i++) {
                         double dist = (DistanceByDegreeAndroid(data.get(i).getLat(), data.get(i).getLon()) / 1000);
                         if (dist <= 2) {
@@ -192,12 +215,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 };
 
                 @Override
-                public void onFailure(Call<GeoInfoExtract> call, Throwable t) {
+                public void onFailure(Call<ApiExtract> call, Throwable t) {
                     Log.i("fail", "failed getting data...");
                 };
             });
         }
     };
+
+    // 서울시 화장실 api
+//    public void fetchApi(ArrayList<Call<GeoInfoExtract>> getApiServices, NaverMap naverMap) {
+//        for (Call<GeoInfoExtract> call : getApiServices) {
+//            call.clone().enqueue(new Callback<GeoInfoExtract>() {
+//                @Override
+//                public void onResponse(Call<GeoInfoExtract> call, Response<GeoInfoExtract> response) {
+//                    GeoInfoExtract result = response.body();
+//                    data = result.getGeoInfo().getRow();
+//                    for (int i = 0; i < data.size(); i++) {
+//                        double dist = (DistanceByDegreeAndroid(data.get(i).getLat(), data.get(i).getLon()) / 1000);
+//                        if (dist <= 2) {
+//                            Log.i("imsy", data.get(i).getLat().toString());
+//                            Marker marker = new Marker();
+//                            marker.setPosition(new LatLng(data.get(i).getLat(), data.get(i).getLon()));
+//                            marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
+//                            marker.setWidth(120);
+//                            marker.setHeight(120);
+//                            marker.setMap(naverMap);
+//                            marked.add(marker);
+//                        }
+//                    }
+//                };
+//
+//                @Override
+//                public void onFailure(Call<GeoInfoExtract> call, Throwable t) {
+//                    Log.i("fail", "failed getting data...");
+//                };
+//            });
+//        }
+//    };
 
 
     // 내 위치와 화장실 지점(위도, 경도) 사이의 거리

@@ -19,7 +19,19 @@ public class PublicToiletResult {
     private static final String URL6 = "http://openapi.seoul.go.kr:8088/667151666f6b6a683931576a75656a/json/GeoInfoPublicToiletWGS/5001/6000/";
 
     // this is 전국 화장실 API
-    private static final String URL_other = "http://api.data.go.kr/openapi/tn_pubr_public_toilet_api?serviceKey=3gp%2BgNqc%2FG9eq3wANZeiJv9VTT41ZR1vVqltt%2BXxdeY%2FJRXjLkALy77q34%2BsUhbmwpnwz8hhd8VGHsUpKjXgnA%3D%3D&pageNo=0&numOfRows=100&type=json";
+    private static final String URL_other = "http://api.data.go.kr/openapi/tn_pubr_public_toilet_api?serviceKey=3gp%2BgNqc%2FG9eq3wANZeiJv9VTT41ZR1vVqltt%2BXxdeY%2FJRXjLkALy77q34%2BsUhbmwpnwz8hhd8VGHsUpKjXgnA%3D%3D&pageNo=0&numOfRows=100&type=json/";
+
+    // new try
+    private static final String URL_another = "https://openapi.gg.go.kr/Publtolt/";
+    public static Retrofit_interface getApiService(){return getInstance().create(Retrofit_interface.class);}
+    private static Retrofit getInstance(){
+        Gson gson = new GsonBuilder().setLenient().create();
+        return new Retrofit.Builder()
+                .baseUrl(URL_another)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+    }
+    //
 
     public static Retrofit_interface getApiService1(){return getInstance1().create(Retrofit_interface.class);}
     public static Retrofit_interface getApiService2(){return getInstance2().create(Retrofit_interface.class);}
