@@ -24,8 +24,6 @@
         app:iconifiedByDefault="false"
         app:queryHint="검색어를 입력하세요" />
 
-
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/ok"
         android:layout_width="wrap_content"

@@ -1,23 +1,15 @@
 package com.gachon.publictoilet;
 
-import static android.content.ContentValues.TAG;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.content.Context;
-//<<<<<<< HEAD
-//import android.content.pm.PackageManager;
-//import android.graphics.PointF;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-//=======
-//>>>>>>> 80a53f8541b0e7c44c9317b8f7bb6d1cc2f825e2
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -25,11 +17,11 @@ import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import androidx.appcompat.widget.SearchView;
+
 import android.widget.Toast;
 
 import com.gachon.publictoilet.ApiExtract.ApiExtract;
 import com.gachon.publictoilet.ApiExtract.GeoInfoExtract;
-import com.google.android.gms.common.api.Api;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -44,14 +36,17 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.http.Query;
-
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback{
 
@@ -67,15 +62,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //    private ArrayList<PublicToilet> data = new ArrayList<>();
     private ArrayList<PublicToilet2> data= new ArrayList<>();
     private LocationManager mLocationManager;
+    private ArrayList<Call<ApiExtract>> getApiServices;
     private double mlat;
     private double mlon;
     private ArrayList<Marker> marked = new ArrayList<>();
     private Marker clickedMark = new Marker();
+    private SearchView searchView;
+    private Boolean isAddrError;
 
     private DatabaseReference mDatabaseRef;
     private EditText mAddress;
     private Button mSearch;
-    private SearchView searchView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,27 +93,49 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         x = (FloatingActionButton) findViewById(R.id.x);
         ok = (FloatingActionButton) findViewById(R.id.ok);
 
+
         searchView = findViewById(R.id.search_view);
-//        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener{
-//
-//        });
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener(){
+            @Override
+            public boolean onQueryTextSubmit(String addr){
+                if (addr.length() > 2) {
+
+                    Handler mHandler = new Handler();
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            requestGeocode(addr);
+                        }
+                    }).start();
+
+                    // requestGeocode 메소드 호출 후, 시간 지연시켜 isAddrError값 업데이트
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                            public void run(){
+                                if (isAddrError == null) return;
+                                if (isAddrError){
+                                    Toast.makeText(getApplicationContext(),  "입력된 주소값이 잘못되었습니다.\n도로명 주소를 입력해주세요.\nEx) 수정구 성남대로 1342", Toast.LENGTH_LONG).show();
+                                }else{
+                                    setPositionOnMap();
+                                    // 클릭 한 곳을 중심으로 카메라 이동
+                                    naverMap.setCameraPosition(new CameraPosition(new LatLng(mlat, mlon), 15, 0, 0));
+                                    fetchApi(getApiServices, naverMap);
+                                }
+                            }
+                    }, 500);
+                } else {
+                    Toast.makeText(getApplicationContext(), "3글자 이상 입력해주세요.", Toast.LENGTH_LONG).show();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
     }
-
-//    private void setMark(Marker marker, double lat, double lng) {
-//        //원근감 표시
-//        marker.setIconPerspectiveEnabled(true);
-//        //아이콘 지정
-//        marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
-//        //마커의 투명도
-//        marker.setAlpha(0.8f);
-//        //마커 위치
-//        marker.setPosition(new LatLng(lat, lng));
-//        //마커 우선순위
-//        marker.setZIndex(0);
-//        //마커 표시
-//        marker.setMap(naverMap);
-//    }
-
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
@@ -154,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 ////                        PublicToiletResult.getApiService6().test_api_get()
 //                )
 //        );
-        ArrayList<Call<ApiExtract>> getApiServices = new ArrayList<>(
+        getApiServices = new ArrayList<>(
                 Arrays.asList(
                         PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 1, 1000),
                         PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 2, 1000),
@@ -172,22 +192,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setOnMapClickListener((point, coord) -> {
             mlat = coord.latitude;
             mlon = coord.longitude;
-            // 이전에 표시된 마크들을 삭제
-            for(Marker mark : marked){
-                mark.setMap(null);
-            }
-            marked.clear();
 
-            // 클릭한 위치에 빨간 핀 세우기
-            clickedMark.setMap(null);
-            clickedMark.setPosition(new LatLng(mlat, mlon));
-            clickedMark.setIcon(OverlayImage.fromResource(R.drawable.pin));
-            clickedMark.setWidth(120);
-            clickedMark.setHeight(120);
-            clickedMark.setMap(naverMap);
-
+            setPositionOnMap();
             fetchApi(getApiServices, this.naverMap);
         });
+    }
+
+    // 새로운 화장실 마크 렌더링
+    public void setPositionOnMap(){
+        // 이전에 표시된 마크들을 삭제
+        for(Marker mark : marked){
+            mark.setMap(null);
+        }
+        marked.clear();
+
+        // 클릭한 위치에 빨간 핀 세우기
+        clickedMark.setMap(null);
+        clickedMark.setPosition(new LatLng(mlat, mlon));
+        clickedMark.setIcon(OverlayImage.fromResource(R.drawable.pin));
+        clickedMark.setWidth(120);
+        clickedMark.setHeight(120);
+        clickedMark.setMap(naverMap);
     }
 
     // 공공화장실 다중 API 호출하기
@@ -252,6 +277,60 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //            });
 //        }
 //    };
+
+    // geocoding api
+    public void requestGeocode(String address){
+        try{
+            BufferedReader bufferedReader;
+            StringBuilder stringBuilder = new StringBuilder();
+            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=" + URLEncoder.encode(address, "UTF-8");
+            URL url = new URL(query);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            if (conn != null) {
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "g2o699d48z");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "Vl0LQg8UEmldclaI1PBcssLa70nQlw1vmlPiOpu5");
+                conn.setDoInput(true);
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                }else{
+                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                }
+
+                String line = null;
+                while ((line = bufferedReader.readLine()) != null){
+                    stringBuilder.append(line + '\n');
+                }
+
+                // 에러값 초기화
+                isAddrError = false;
+
+                int indexFirst;
+                int indexLast;
+
+                indexFirst = stringBuilder.indexOf("\"x\":\"");
+                indexLast = stringBuilder.indexOf("\",\"y\":");
+                String lon = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                indexFirst = stringBuilder.indexOf("\"y\":\"");
+                indexLast = stringBuilder.indexOf("\",\"distance\":");
+                String lat = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                mlat = Double.parseDouble(lat);
+                mlon = Double.parseDouble(lon);
+
+                bufferedReader.close();
+                conn.disconnect();
+            }
+        } catch(Exception e){
+            isAddrError = true;
+            e.printStackTrace();
+        }
+    }
 
 
     // 내 위치와 화장실 지점(위도, 경도) 사이의 거리
