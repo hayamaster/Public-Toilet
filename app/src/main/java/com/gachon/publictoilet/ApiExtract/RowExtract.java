@@ -13,7 +13,6 @@ public class RowExtract {
     @Expose
     private ArrayList<PublicToilet> row;
     public ArrayList<PublicToilet> getRow() {
-        Log.i("zona", "si");
         return row;
     }
 }

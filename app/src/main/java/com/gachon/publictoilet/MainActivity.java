@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -33,6 +34,7 @@ import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.UiSettings;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Animation fab_open, fab_close;
     private boolean isFabOpen = false;
 
+//    분당구 성남대로 60
     Call<GeoInfoExtract> call;
 //    private ArrayList<PublicToilet> data = new ArrayList<>();
     private ArrayList<PublicToilet2> data= new ArrayList<>();
@@ -70,10 +73,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SearchView searchView;
     private Boolean isAddrError;
 
-    private DatabaseReference mDatabaseRef;
+//    private DatabaseReference mDatabaseRef;
     private EditText mAddress;
     private Button mSearch;
-
+    private DatabaseReference mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+    private DatabaseReference conditionRef = mDatabaseRef.child("Data");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -234,6 +238,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             marker.setWidth(120);
                             marker.setHeight(120);
                             marker.setMap(naverMap);
+
+                            // 마커 클릭 이벤트
+                            String imsy = data.get(i).getLat().toString();
+                            marker.setOnClickListener(new Overlay.OnClickListener(){
+                                @Override
+                                public boolean onClick(@NonNull Overlay overlay){
+                                    if (overlay instanceof Marker){
+//                                        Toast.makeText(getApplicationContext(),imsy, Toast.LENGTH_LONG).show();
+                                        Intent intent = new Intent(MainActivity.this, ToiletInfoActivity.class);
+                                        startActivity(intent);
+                                        return true;
+                                    }
+                                    return false;
+                                }
+                            });
+
                             marked.add(marker);
                         }
                     }
@@ -246,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             });
         }
     };
+
 
     // 서울시 화장실 api
 //    public void fetchApi(ArrayList<Call<GeoInfoExtract>> getApiServices, NaverMap naverMap) {
