@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -19,6 +18,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import androidx.appcompat.widget.SearchView;
 
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.gachon.publictoilet.ApiExtract.ApiExtract;
@@ -60,7 +61,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Animation fab_open, fab_close;
     private boolean isFabOpen = false;
 
-//    분당구 성남대로 60
     Call<GeoInfoExtract> call;
 //    private ArrayList<PublicToilet> data = new ArrayList<>();
     private ArrayList<PublicToilet2> data= new ArrayList<>();
@@ -78,6 +78,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Button mSearch;
     private DatabaseReference mDatabaseRef = FirebaseDatabase.getInstance().getReference();
     private DatabaseReference conditionRef = mDatabaseRef.child("Data");
+
+    private LinearLayout toiletInfoLayout;
+    private TextView getToiletAddr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -207,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // 이전에 표시된 마크들을 삭제
         for(Marker mark : marked){
             mark.setMap(null);
+            mark.setOnClickListener(null);
         }
         marked.clear();
 
@@ -245,9 +249,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 @Override
                                 public boolean onClick(@NonNull Overlay overlay){
                                     if (overlay instanceof Marker){
-//                                        Toast.makeText(getApplicationContext(),imsy, Toast.LENGTH_LONG).show();
-                                        Intent intent = new Intent(MainActivity.this, ToiletInfoActivity.class);
-                                        startActivity(intent);
+                                        getToiletAddr = findViewById(R.id.toilet_addr);
+                                        toiletInfoLayout = findViewById(R.id.toilet_info_layout);
+
+                                        getToiletAddr.setText("주소: " + imsy);
+                                        toiletInfoLayout.setVisibility(View.VISIBLE);
                                         return true;
                                     }
                                     return false;

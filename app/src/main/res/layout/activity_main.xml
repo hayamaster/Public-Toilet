@@ -24,6 +24,76 @@
         app:iconifiedByDefault="false"
         app:queryHint="검색어를 입력하세요" />
 
+
+    <LinearLayout
+        android:id="@+id/toilet_info_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:background="@color/purple_200"
+        android:layout_marginTop="6dp"
+        android:layout_below="@+id/search_view">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp"
+            android:layout_margin="10dp"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/toilet_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:text="화장실 명: "
+                    android:textSize="16dp"
+                    android:textColor="@color/white"/>
+
+                <TextView
+                    android:id="@+id/toilet_addr"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:text="주소: "
+                    android:textColor="@color/white"
+                    android:textSize="12dp" />
+
+                <TextView
+                    android:id="@+id/toilet_counts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:text="변기 개수: "
+                    android:textColor="@color/white"
+                    android:textSize="12dp" />
+
+                <TextView
+                    android:id="@+id/toilet_break"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:text="고장유무: "
+                    android:textColor="@color/white"
+                    android:textSize="12dp" />
+            </LinearLayout>
+            <ImageButton
+                android:id="@+id/map_info_button"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@android:drawable/ic_media_play"
+                android:layout_gravity="center"/>
+        </LinearLayout>
+    </LinearLayout>
+
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/ok"
         android:layout_width="wrap_content"

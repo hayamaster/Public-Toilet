@@ -17,13 +17,6 @@
         android:theme="@style/Theme.PublicToilet"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".ToiletInfoActivity"
-            android:theme="@style/Theme.PublicToilet"
-            android:exported="false" />
-<!--        <activity-->
-<!--            android:name=".search"-->
-<!--            android:exported="false" />-->
-        <activity
             android:name=".ToiletPlace"
             android:exported="false" />
         <activity
