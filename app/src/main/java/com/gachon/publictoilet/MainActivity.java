@@ -5,9 +5,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -41,11 +44,13 @@ import com.naver.maps.map.util.FusedLocationSource;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -81,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LinearLayout toiletInfoLayout;
     private TextView getToiletAddr;
+    private Button mapInfoBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,21 +159,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         uiSettings.setLocationButtonEnabled(true);
 
         // 네이버 지도 렌더링 시, 나의 위치 표시하기
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
-        } else {
-            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null ? mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) : mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if (location == null) {
-                Toast.makeText(this, "위치가 없습니다.", Toast.LENGTH_LONG).show();
-            } else {
-                mlat = location.getLatitude();
-                mlon = location.getLongitude();
-                Toast.makeText(this, "위도: " + mlat + "경도: " + mlon, Toast.LENGTH_LONG).show();
-                naverMap.setCameraPosition(new CameraPosition(new LatLng(mlat, mlon), 15, 0, 0));
-            }
-        }
+        getMyPos();
+        naverMap.setCameraPosition(new CameraPosition(new LatLng(mlat, mlon), 15, 0, 0));
 
         // 공공화장실 데이터
         // 서울시 화장실 api
@@ -181,6 +174,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 ////                        PublicToiletResult.getApiService6().test_api_get()
 //                )
 //        );
+
         getApiServices = new ArrayList<>(
                 Arrays.asList(
                         PublicToiletResult.getApiService().test_api_get("fb6f9bdc95274f0d96598c6568334936", "json", 1, 1000),
@@ -205,6 +199,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    // 나의 위치 값 업데이트
+    public void getMyPos() {
+        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+        } else {
+            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null ? mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) : mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            if (location == null) {
+                Toast.makeText(this, location.toString(), Toast.LENGTH_LONG).show();
+            } else {
+                mlat = location.getLatitude();
+                mlon = location.getLongitude();
+            }
+        }
+    }
+
     // 새로운 화장실 마크 렌더링
     public void setPositionOnMap(){
         // 이전에 표시된 마크들을 삭제
@@ -223,6 +234,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clickedMark.setMap(naverMap);
     }
 
+
     // 공공화장실 다중 API 호출하기
     // 경기도 공중화장실
     public void fetchApi(ArrayList<Call<ApiExtract>> getApiServices, NaverMap naverMap) {
@@ -233,27 +245,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     ApiExtract result = response.body();
                     data = result.getApiInfo().getRow();
                     for (int i = 0; i < data.size(); i++) {
-                        double dist = (DistanceByDegreeAndroid(data.get(i).getLat(), data.get(i).getLon()) / 1000);
+                        double lat = data.get(i).getLat();
+                        double lon = data.get(i).getLon();
+
+                        double dist = (DistanceByDegreeAndroid(lat, lon) / 1000);
                         if (dist <= 2) {
-                            Log.i("imsy", data.get(i).getLat().toString());
+                            Log.i("imsy", String.valueOf(lat));
                             Marker marker = new Marker();
-                            marker.setPosition(new LatLng(data.get(i).getLat(), data.get(i).getLon()));
+                            marker.setPosition(new LatLng(lat, lon));
                             marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
                             marker.setWidth(120);
                             marker.setHeight(120);
                             marker.setMap(naverMap);
 
                             // 마커 클릭 이벤트
-                            String imsy = data.get(i).getLat().toString();
                             marker.setOnClickListener(new Overlay.OnClickListener(){
                                 @Override
                                 public boolean onClick(@NonNull Overlay overlay){
                                     if (overlay instanceof Marker){
                                         getToiletAddr = findViewById(R.id.toilet_addr);
                                         toiletInfoLayout = findViewById(R.id.toilet_info_layout);
+                                        mapInfoBtn = findViewById(R.id.map_info_button);
 
-                                        getToiletAddr.setText("주소: " + imsy);
+                                        getToiletAddr.setText("주소: " + lat);
                                         toiletInfoLayout.setVisibility(View.VISIBLE);
+
+                                        String destination = toURLEncodeUtf8("가천대학교");
+
+                                        // 길찾기 버튼 클릭 시, 네이버 지도 앱 연동
+                                        mapInfoBtn.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View view) {
+                                                getMyPos();
+
+                                                String url = "nmap://route/walk?slat=" + mlat + "&slng=" + mlon +"&sname=%EB%82%B4+%EC%9C%84%EC%B9%98&dlat=" + lat + "&dlng=" + lon + "&dname=" + destination + "&appname=com.gachon.publictoilet";
+
+                                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                                                intent.addCategory(Intent.CATEGORY_BROWSABLE);
+
+                                                List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                                                if (list == null || list.isEmpty()) {
+                                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.nhn.android.nmap")));
+                                                } else {
+                                                    startActivity(intent);
+                                                }
+                                            }
+                                        });
                                         return true;
                                     }
                                     return false;
@@ -272,7 +309,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             });
         }
     };
-
 
     // 서울시 화장실 api
 //    public void fetchApi(ArrayList<Call<GeoInfoExtract>> getApiServices, NaverMap naverMap) {
@@ -419,6 +455,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             x.setClickable(true);
             ok.setClickable(true);
             isFabOpen = true;
+        }
+    }
+
+    // 주소를 UTF8로 인코딩
+    public static String toURLEncodeUtf8(String str){
+        if (str == null || str.trim().equals("")) return "";
+        try {
+            return URLEncoder.encode(str, "UTF-8");
+        } catch(UnsupportedEncodingException ex){
+            return null;
         }
     }
 }

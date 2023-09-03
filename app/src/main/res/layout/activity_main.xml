@@ -71,7 +71,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="변기 개수: "
+                    android:text="총 변기 개수: "
+                    android:textColor="@color/white"
+                    android:textSize="12dp" />
+
+                <TextView
+                    android:id="@+id/toilet_available"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:text="이용가능 변기 수: "
                     android:textColor="@color/white"
                     android:textSize="12dp" />
 
@@ -80,15 +89,25 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="고장유무: "
+                    android:text="고장난 변기 수: "
+                    android:textColor="@color/white"
+                    android:textSize="12dp" />
+
+                <TextView
+                    android:id="@+id/baby_diaper_switchboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:text="아기 귀저기 교환대: "
                     android:textColor="@color/white"
                     android:textSize="12dp" />
             </LinearLayout>
-            <ImageButton
+            <Button
                 android:id="@+id/map_info_button"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:src="@android:drawable/ic_media_play"
+
+                android:text="길찾기"
                 android:layout_gravity="center"/>
         </LinearLayout>
     </LinearLayout>
