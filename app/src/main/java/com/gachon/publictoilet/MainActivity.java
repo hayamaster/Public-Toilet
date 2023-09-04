@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -15,10 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.EditText;
 import androidx.appcompat.widget.SearchView;
 
 import android.widget.LinearLayout;
@@ -26,10 +22,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.gachon.publictoilet.ApiExtract.ApiExtract;
-import com.gachon.publictoilet.ApiExtract.GeoInfoExtract;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.LocationTrackingMode;
@@ -41,7 +38,6 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -51,6 +47,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -61,13 +58,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int ACCESS_LOCATION_PERMISSION_REQUEST_CODE = 100;
     private FusedLocationSource locationSource;
     private NaverMap naverMap;
-    private Context mContext;
-    private FloatingActionButton main_btn, x, ok;
-    private Animation fab_open, fab_close;
     private boolean isFabOpen = false;
 
-    Call<GeoInfoExtract> call;
-//    private ArrayList<PublicToilet> data = new ArrayList<>();
+//    Call<GeoInfoExtract> call;
     private ArrayList<PublicToilet2> data= new ArrayList<>();
     private LocationManager mLocationManager;
     private ArrayList<Call<ApiExtract>> getApiServices;
@@ -78,15 +71,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SearchView searchView;
     private Boolean isAddrError;
 
-//    private DatabaseReference mDatabaseRef;
-    private EditText mAddress;
-    private Button mSearch;
-    private DatabaseReference mDatabaseRef = FirebaseDatabase.getInstance().getReference();
-    private DatabaseReference conditionRef = mDatabaseRef.child("Data");
-
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private LinearLayout toiletInfoLayout;
+    private TextView getBuildingName;
     private TextView getToiletAddr;
+    private TextView getFemaleCnt;
+    private TextView getMaleCnt;
+    private TextView getCommon;
     private Button mapInfoBtn;
+    private String destination;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,14 +91,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MapFragment mapFragment = (MapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         locationSource = new FusedLocationSource(this, ACCESS_LOCATION_PERMISSION_REQUEST_CODE);
-
-        // 버튼
-        mContext = getApplicationContext();
-        fab_open = AnimationUtils.loadAnimation(mContext, R.anim.fab_open);
-        fab_close = AnimationUtils.loadAnimation(mContext, R.anim.fab_close);
-        main_btn = (FloatingActionButton) findViewById(R.id.main_btn);
-        x = (FloatingActionButton) findViewById(R.id.x);
-        ok = (FloatingActionButton) findViewById(R.id.ok);
 
 
         searchView = findViewById(R.id.search_view);
@@ -162,18 +148,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getMyPos();
         naverMap.setCameraPosition(new CameraPosition(new LatLng(mlat, mlon), 15, 0, 0));
 
-        // 공공화장실 데이터
-        // 서울시 화장실 api
-//        ArrayList<Call<GeoInfoExtract>> getApiServices = new ArrayList<>(
-//                Arrays.asList(
-//                        PublicToiletResult.getApiService1().test_api_get()
-////                        PublicToiletResult.getApiService2().test_api_get(),
-////                        PublicToiletResult.getApiService3().test_api_get(),
-////                        PublicToiletResult.getApiService4().test_api_get(),
-////                        PublicToiletResult.getApiService5().test_api_get(),
-////                        PublicToiletResult.getApiService6().test_api_get()
-//                )
-//        );
 
         getApiServices = new ArrayList<>(
                 Arrays.asList(
@@ -259,18 +233,74 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             marker.setMap(naverMap);
 
                             // 마커 클릭 이벤트
+                            // 수정구 성남대로 1342
                             marker.setOnClickListener(new Overlay.OnClickListener(){
                                 @Override
                                 public boolean onClick(@NonNull Overlay overlay){
                                     if (overlay instanceof Marker){
+                                        getBuildingName = findViewById(R.id.building_name);
                                         getToiletAddr = findViewById(R.id.toilet_addr);
+                                        getFemaleCnt = findViewById(R.id.female_counts);
+                                        getMaleCnt = findViewById(R.id.male_counts);
+                                        getCommon = findViewById(R.id.common);
                                         toiletInfoLayout = findViewById(R.id.toilet_info_layout);
                                         mapInfoBtn = findViewById(R.id.map_info_button);
 
-                                        getToiletAddr.setText("주소: " + lat);
+                                        getToiletAddr.setText("주소: ");
                                         toiletInfoLayout.setVisibility(View.VISIBLE);
 
-                                        String destination = toURLEncodeUtf8("가천대학교");
+
+                                        db.collection("ADDRESS").whereEqualTo("REFINE_WGS84_LAT", String.valueOf(lat)).whereEqualTo("REFINE_WGS84_LOGT", String.valueOf(lon)).get()
+                                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                                        if (task.isSuccessful()) {
+                                                            for (QueryDocumentSnapshot document_imsy : task.getResult()) {
+                                                                String buildingName = String.valueOf(document_imsy.getData().get("PBCTLT_PLC_NM"));
+                                                                String addr = String.valueOf(document_imsy.getData().get("REFINE_LOTNO_ADDR"));
+                                                                Map<String, String> fecnt = (Map) document_imsy.getData().get("FEMALE_WTRCLS_CNT");
+                                                                Map<String, String> mcnt = (Map) document_imsy.getData().get("MALE_WTRCLS_CNT");
+                                                                String common = String.valueOf(document_imsy.getData().get("MALE_FEMALE_CMNUSE_TOILET_YN"));
+
+                                                                int feAvailable = 0;
+                                                                int feUsed = 0;
+                                                                int feCrash = 0;
+                                                                int mAvailable = 0;
+                                                                int mUsed = 0;
+                                                                int mCrash = 0;
+                                                                for(String key : mcnt.keySet()){
+                                                                    if (String.valueOf(mcnt.get(key)).equals("0")){
+                                                                        mAvailable += 1;
+                                                                    }else if (String.valueOf(mcnt.get(key)).equals("1")){
+                                                                        mUsed += 1;
+                                                                    }else{
+                                                                        mCrash += 1;
+                                                                    }
+                                                                }
+                                                                for(String key : fecnt.keySet()){
+                                                                    if (String.valueOf(fecnt.get(key)).equals("0")){
+                                                                        feAvailable += 1;
+                                                                    }else if (String.valueOf(fecnt.get(key)).equals("1")){
+                                                                        feUsed += 1;
+                                                                    }else{
+                                                                        feCrash += 1;
+                                                                    }
+                                                                }
+
+                                                                destination = toURLEncodeUtf8(buildingName);
+                                                                getBuildingName.setText("건물명: " + buildingName);
+                                                                getToiletAddr.setText("주소: " + addr);
+                                                                getMaleCnt.setText("남자화장실: 이용가능-" + mAvailable + " 이용중-" + mUsed + " 고장-" + mCrash);
+                                                                getFemaleCnt.setText("여자화장실: 이용가능-" + feAvailable + " 이용중-" + feUsed + " 고장-" + feCrash);
+                                                                getCommon.setText("남여 공용 화장실 여부: " + common);
+                                                                break;
+                                                            }
+                                                        } else {
+                                                            Log.d("siv", "Error getting documents: ", task.getException());
+                                                            Toast.makeText(getApplicationContext(),"k;;;;", Toast.LENGTH_LONG).show();
+                                                        }
+                                                    }
+                                                });
 
                                         // 길찾기 버튼 클릭 시, 네이버 지도 앱 연동
                                         mapInfoBtn.setOnClickListener(new View.OnClickListener() {
@@ -296,7 +326,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     return false;
                                 }
                             });
-
                             marked.add(marker);
                         }
                     }
@@ -305,41 +334,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void onFailure(Call<ApiExtract> call, Throwable t) {
                     Log.i("fail", "failed getting data...");
-                };
+                }
             });
         }
     };
-
-    // 서울시 화장실 api
-//    public void fetchApi(ArrayList<Call<GeoInfoExtract>> getApiServices, NaverMap naverMap) {
-//        for (Call<GeoInfoExtract> call : getApiServices) {
-//            call.clone().enqueue(new Callback<GeoInfoExtract>() {
-//                @Override
-//                public void onResponse(Call<GeoInfoExtract> call, Response<GeoInfoExtract> response) {
-//                    GeoInfoExtract result = response.body();
-//                    data = result.getGeoInfo().getRow();
-//                    for (int i = 0; i < data.size(); i++) {
-//                        double dist = (DistanceByDegreeAndroid(data.get(i).getLat(), data.get(i).getLon()) / 1000);
-//                        if (dist <= 2) {
-//                            Log.i("imsy", data.get(i).getLat().toString());
-//                            Marker marker = new Marker();
-//                            marker.setPosition(new LatLng(data.get(i).getLat(), data.get(i).getLon()));
-//                            marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
-//                            marker.setWidth(120);
-//                            marker.setHeight(120);
-//                            marker.setMap(naverMap);
-//                            marked.add(marker);
-//                        }
-//                    }
-//                };
-//
-//                @Override
-//                public void onFailure(Call<GeoInfoExtract> call, Throwable t) {
-//                    Log.i("fail", "failed getting data...");
-//                };
-//            });
-//        }
-//    };
 
     // geocoding api
     public void requestGeocode(String address){
@@ -421,41 +419,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return;
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    public void ClickBtn(View v){
-//        switch (v.getId()) {
-//            case R.id.main_btn:
-//                toggleFab();
-//                break;
-//            case R.id.x:
-//                toggleFab();
-//                Toast.makeText(this, "Camera Open-!", Toast.LENGTH_SHORT).show();
-//                break;
-//            case R.id.ok:
-//                toggleFab();
-//                Toast.makeText(this, "Map Open-!", Toast.LENGTH_SHORT).show();
-//                break;
-//        }
-        toggleFab();
-    }
-
-    private void toggleFab() {
-        if (isFabOpen) {
-            main_btn.setImageResource(R.drawable.plus);
-            x.startAnimation(fab_close);
-            ok.startAnimation(fab_close);
-            x.setClickable(false);
-            ok.setClickable(false);
-            isFabOpen = false;
-        } else {
-            main_btn.setImageResource(R.drawable.plus);
-            x.startAnimation(fab_open);
-            ok.startAnimation(fab_open);
-            x.setClickable(true);
-            ok.setClickable(true);
-            isFabOpen = true;
-        }
     }
 
     // 주소를 UTF8로 인코딩

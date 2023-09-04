@@ -49,11 +49,11 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/toilet_name"
+                    android:id="@+id/building_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="화장실 명: "
+                    android:text="건물명: "
                     android:textSize="16dp"
                     android:textColor="@color/white"/>
 
@@ -67,38 +67,29 @@
                     android:textSize="12dp" />
 
                 <TextView
-                    android:id="@+id/toilet_counts"
+                    android:id="@+id/female_counts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="총 변기 개수: "
+                    android:text="남자화장실: "
                     android:textColor="@color/white"
                     android:textSize="12dp" />
 
                 <TextView
-                    android:id="@+id/toilet_available"
+                    android:id="@+id/male_counts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="이용가능 변기 수: "
+                    android:text="여자화장실: "
                     android:textColor="@color/white"
                     android:textSize="12dp" />
 
                 <TextView
-                    android:id="@+id/toilet_break"
+                    android:id="@+id/common"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="고장난 변기 수: "
-                    android:textColor="@color/white"
-                    android:textSize="12dp" />
-
-                <TextView
-                    android:id="@+id/baby_diaper_switchboard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
-                    android:text="아기 귀저기 교환대: "
+                    android:text="남여 공용 화장실 여부: "
                     android:textColor="@color/white"
                     android:textSize="12dp" />
             </LinearLayout>
@@ -111,56 +102,5 @@
                 android:layout_gravity="center"/>
         </LinearLayout>
     </LinearLayout>
-
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/ok"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/x"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="10dp"
-        android:layout_marginRight="23dp"
-        android:backgroundTint="@color/button"
-        app:rippleColor="@color/white"
-        app:srcCompat="@drawable/ok"
-        android:visibility="invisible"
-        app:borderWidth="0dp"
-        app:maxImageSize="52dp"
-        app:fabCustomSize="67dp"/>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/x"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/main_btn"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="10dp"
-        android:layout_marginRight="23dp"
-        android:backgroundTint="@color/button"
-        app:rippleColor="@color/white"
-        app:srcCompat="@drawable/x"
-        android:visibility="invisible"
-        app:borderWidth="0dp"
-        app:maxImageSize="52dp"
-        app:fabCustomSize="67dp"/>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/main_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|right"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="20dp"
-        android:layout_marginRight="20dp"
-        android:backgroundTint="@color/button"
-        android:onClick="ClickBtn"
-        app:rippleColor="@color/white"
-        app:srcCompat="@drawable/plus"
-        app:borderWidth="0dp"
-        app:maxImageSize="50dp"
-        app:fabCustomSize="70dp"
-        tools:ignore="SpeakableTextPresentCheck"/>
 
 </RelativeLayout>
