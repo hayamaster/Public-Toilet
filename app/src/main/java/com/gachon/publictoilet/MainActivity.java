@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private NaverMap naverMap;
     private boolean isFabOpen = false;
 
-//    Call<GeoInfoExtract> call;
     private ArrayList<PublicToilet2> data= new ArrayList<>();
     private LocationManager mLocationManager;
     private ArrayList<Call<ApiExtract>> getApiServices;
@@ -224,7 +223,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         double dist = (DistanceByDegreeAndroid(lat, lon) / 1000);
                         if (dist <= 2) {
-                            Log.i("imsy", String.valueOf(lat));
                             Marker marker = new Marker();
                             marker.setPosition(new LatLng(lat, lon));
                             marker.setIcon(OverlayImage.fromResource(R.drawable.toilets));
@@ -246,7 +244,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         toiletInfoLayout = findViewById(R.id.toilet_info_layout);
                                         mapInfoBtn = findViewById(R.id.map_info_button);
 
-                                        getToiletAddr.setText("주소: ");
+                                        getBuildingName.setText("건물명:");
+                                        getToiletAddr.setText("주소:");
+                                        getMaleCnt.setText("남자화장실:");
+                                        getFemaleCnt.setText("여자화장실:");
+                                        getCommon.setText("남여 공용 화장실 여부:");
                                         toiletInfoLayout.setVisibility(View.VISIBLE);
 
 
@@ -255,6 +257,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                                     @Override
                                                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                                                         if (task.isSuccessful()) {
+                                                            if (String.valueOf(task.getResult().getDocuments()).equals("[]")){
+                                                                getBuildingName.setText("건물명: 정보 없음");
+                                                                getToiletAddr.setText("주소: 정보 없음");
+                                                                getMaleCnt.setText("남자화장실: 정보 없음");
+                                                                getFemaleCnt.setText("여자화장실: 정보 없음");
+                                                                getCommon.setText("남여 공용 화장실 여부: 정보 없음");
+                                                                return;
+                                                            }
                                                             for (QueryDocumentSnapshot document_imsy : task.getResult()) {
                                                                 String buildingName = String.valueOf(document_imsy.getData().get("PBCTLT_PLC_NM"));
                                                                 String addr = String.valueOf(document_imsy.getData().get("REFINE_LOTNO_ADDR"));
@@ -296,8 +306,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                                                 break;
                                                             }
                                                         } else {
-                                                            Log.d("siv", "Error getting documents: ", task.getException());
-                                                            Toast.makeText(getApplicationContext(),"k;;;;", Toast.LENGTH_LONG).show();
+                                                            Log.d("error", "Error getting documents: ", task.getException());
                                                         }
                                                     }
                                                 });
